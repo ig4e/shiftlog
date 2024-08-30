@@ -11,11 +11,17 @@ datasource db {
 }
 
 model Shift {
-    id        String      @id @default(auto()) @map("_id") @db.ObjectId
+    id        String    @id @default(auto()) @map("_id") @db.ObjectId
     startedAt DateTime
-    endedAt DateTime?
-    
+    endedAt   DateTime?
+    breaks    Break[]
+
     updatedAt DateTime @updatedAt
 
     @@index([startedAt])
+}
+
+type Break {
+    startedAt DateTime
+    endedAt   DateTime?
 }

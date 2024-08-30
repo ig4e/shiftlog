@@ -27,6 +27,9 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { RouterInputs, api } from "~/trpc/react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "~/lib/db";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 
 const chartConfig = {
   duration: {
@@ -39,28 +42,20 @@ export function OverviewChart() {
   const [timeRange, setTimeRange] =
     React.useState<RouterInputs["shift"]["getStats"]["timeRange"]>("WEEK");
 
-  const { data } = api.shift.getStats.useQuery(
-    {
+  const data = useLiveQuery(() => getChartData({ timeRange })) ?? {
+    chartData: [],
+    meta: {
+      totalShifts: 0,
+      totalDuration: 0,
       timeRange: timeRange,
+      startOfTimeRange: new Date(),
+      endOfTimeRange: new Date(),
     },
-    {
-      initialData: {
-        chartData: [],
-        meta: {
-          totalShifts: 0,
-          totalDuration: 0,
-          timeRange: timeRange,
-          startOfTimeRange: new Date(),
-          endOfTimeRange: new Date(),
-        },
-      },
-    },
-  );
-
+  };
 
   return (
     <Card className="m-0 rounded-xl border-none p-0">
-      <CardHeader className="flex gap-2 space-y-0 border-b sm:flex-row">
+      <CardHeader className="flex gap-2 space-y-0 pb-0">
         <div className="grid flex-1 gap-1">
           <CardTitle>
             {timeRange === "WEEK"
@@ -80,30 +75,35 @@ export function OverviewChart() {
               month: "short",
               day: "numeric",
             })}{" "}
-            ({timeRange === "WEEK"
+            (
+            {timeRange === "WEEK"
               ? `Week ${DateTime.fromJSDate(data.meta.startOfTimeRange).weekNumber}`
               : timeRange === "MONTH"
                 ? `Month ${DateTime.fromJSDate(data.meta.startOfTimeRange).month}`
-                : `Year ${DateTime.fromJSDate(data.meta.startOfTimeRange).year}`})
+                : `Year ${DateTime.fromJSDate(data.meta.startOfTimeRange).year}`}
+            )
           </CardDescription>
         </div>
-        <Select
-          value={timeRange}
-          onValueChange={(
-            value: RouterInputs["shift"]["getStats"]["timeRange"],
-          ) => setTimeRange(value)}
-        >
-          <SelectTrigger aria-label="Select a value" className="rounded-xl">
-            <SelectValue placeholder="Last 3 months" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="YEAR">Last year</SelectItem>
-            <SelectItem value="MONTH">Last 30 days</SelectItem>
-            <SelectItem value="WEEK">Last 7 days</SelectItem>
-          </SelectContent>
-        </Select>
       </CardHeader>
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+      <CardContent className="px-0">
+        <Tabs
+          defaultValue="YEAR"
+          className="w-full px-6 py-3"
+          onValueChange={(value) => setTimeRange(value as never)}
+        >
+          <TabsList className="w-full">
+            <TabsTrigger className="w-full" value="YEAR">
+              Last Week
+            </TabsTrigger>
+            <TabsTrigger className="w-full" value="MONTH">
+              Last Month
+            </TabsTrigger>
+            <TabsTrigger className="w-full" value="WEEK">
+              Last Year
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         <ChartContainer
           config={chartConfig}
           className="aspect-auto h-[250px] w-full"
@@ -165,4 +165,55 @@ export function OverviewChart() {
       </CardContent>
     </Card>
   );
+}
+
+async function getChartData(input: { timeRange: "WEEK" | "MONTH" | "YEAR" }) {
+  const today = new Date();
+
+  const startOfWeek = getStartOfWeek(today);
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const startOfYear = new Date(today.getFullYear(), 0, 1);
+
+  const start =
+    input.timeRange === "WEEK"
+      ? startOfWeek
+      : input.timeRange === "MONTH"
+        ? startOfMonth
+        : startOfYear;
+
+  const shifts = await db.shifts
+    .filter((shift) => shift.startedAt > start)
+    .toArray();
+
+  return {
+    chartData: shifts.map((shift) => ({
+      date: shift.startedAt.toDateString(),
+      duration: DateTime.fromJSDate(shift.endedAt ?? new Date())
+        .diff(DateTime.fromJSDate(shift.startedAt))
+        .as("hours"),
+    })),
+    meta: {
+      totalShifts: shifts.length,
+      totalDuration: shifts.reduce((acc, shift) => {
+        return (
+          acc +
+          (shift.endedAt ?? new Date()).getTime() -
+          shift.startedAt.getTime()
+        );
+      }, 0),
+      timeRange: input.timeRange,
+      startOfTimeRange: start,
+      endOfTimeRange: today,
+    },
+  };
+}
+
+function getStartOfWeek(date: Date): Date {
+  const dayOfWeek = date.getDay(); // Sunday - Saturday : 0 - 6
+  const diff = (dayOfWeek + 6) % 7; // Adjust for Sunday start
+  const startOfWeek = new Date(date);
+  startOfWeek.setDate(date.getDate() - diff);
+  startOfWeek.setHours(0, 0, 0, 0); // Reset time to midnight
+
+  return startOfWeek;
 }
