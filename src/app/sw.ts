@@ -39,13 +39,6 @@ const serwist = new Serwist({
           return request.destination === "document";
         },
       },
-     {
-        url: "/settings",
-        revision,
-        matcher({ request }) {
-          return request.destination === "document";
-        },
-      }, 
     ],
   },
 });
