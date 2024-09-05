@@ -10,15 +10,26 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+model User {
+    id       String  @id @default(auto()) @map("_id") @db.ObjectId
+    email String  @unique
+    shifts   Shift[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
 model Shift {
     id        String    @id @default(auto()) @map("_id") @db.ObjectId
     startedAt DateTime
     endedAt   DateTime?
     breaks    Break[]
+    user      User      @relation(fields: [userId], references: [id])
 
     updatedAt DateTime @updatedAt
+    userId    String   @db.ObjectId
 
-    @@index([startedAt])
+    @@index([startedAt, userId])
 }
 
 type Break {
