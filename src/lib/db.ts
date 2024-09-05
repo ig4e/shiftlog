@@ -8,8 +8,8 @@ export const db = new Dexie("shiftDBv1.0.0") as Dexie & {
 };
 
 db.version(1).stores({
-  shifts: "++id, startedAt, endedAt, updatedAt",
-  account: "++id, email, syncedAt",
+  shifts: "id",
+  account: "++id",
 });
 
 export function getObjectID() {
