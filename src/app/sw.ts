@@ -1,6 +1,6 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { BackgroundSyncPlugin, NetworkOnly, Serwist } from "serwist";
+import { BackgroundSyncPlugin, NetworkOnly, Serwist, CacheFirst } from "serwist";
 import { registerRoute } from "serwist/legacy";
 
 // This declares the value of `injectionPoint` to TypeScript.
@@ -20,13 +20,13 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
-  // runtimeCaching: [
-  //   {
-  //     matcher: ({ request }) => request.destination === "style",
-  //     handler: new CacheFirst(),
-  //   },
-  // ],
+  //runtimeCaching: defaultCache,
+  runtimeCaching: [
+    {
+      matcher: ({ request }) => request.destination === "style",
+      handler: new CacheFirst(),
+    },
+  ],
 });
 
 serwist.addEventListeners();
