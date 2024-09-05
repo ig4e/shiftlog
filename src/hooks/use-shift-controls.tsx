@@ -19,11 +19,10 @@ export function useShiftControls({
 
     const timer = setInterval(() => {
       db.shifts
-        .orderBy("startedAt")
         .filter((shift) => !shift.endedAt)
         .limit(1)
-        .first()
-        .then((data) => setData(data));
+        .toArray()
+        .then((data) => setData(data[0]));
     }, 1000);
     return () => clearInterval(timer);
   }, [shiftData]);
