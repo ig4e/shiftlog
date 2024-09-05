@@ -24,7 +24,7 @@ export function ShiftsOverview() {
         .then((data) =>
           data.sort(
             (a, b) =>
-              b.startedAt.getMilliseconds() - a.startedAt.getMilliseconds(),
+              b.startedAt - a.startedAt,
           ),
         ),
     ) ?? [];
