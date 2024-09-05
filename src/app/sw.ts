@@ -1,6 +1,12 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { BackgroundSyncPlugin, NetworkOnly, Serwist, CacheFirst } from "serwist";
+import {
+  BackgroundSyncPlugin,
+  NetworkOnly,
+  Serwist,
+  CacheFirst,
+  NavigationRoute,
+} from "serwist";
 import { registerRoute } from "serwist/legacy";
 
 // This declares the value of `injectionPoint` to TypeScript.
@@ -17,13 +23,11 @@ declare const self: ServiceWorkerGlobalScope;
 
 const revision = crypto.randomUUID();
 
-
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  //runtimeCaching: defaultCache,
   runtimeCaching: [
     {
       matcher: ({ request }) => request.destination === "style",
@@ -34,7 +38,6 @@ const serwist = new Serwist({
     entries: [
       {
         url: "/",
-        revision,
         matcher({ request }) {
           return request.destination === "document";
         },
@@ -43,7 +46,9 @@ const serwist = new Serwist({
   },
 });
 
-serwist.registerRoute(new NavigationRoute(serwist.createHandlerBoundToUrl("/")));
+serwist.registerRoute(
+  new NavigationRoute(serwist.createHandlerBoundToUrl("/")),
+);
 
 const backgroundSync = new BackgroundSyncPlugin("shift-sync", {
   maxRetentionTime: 24 * 60, // Retry for a maximum of 24 Hours (specified in minutes)
@@ -58,7 +63,6 @@ registerRoute(
 );
 
 serwist.addEventListeners();
-
 
 // const client = createTRPCClient<AppRouter>({
 //   links: [

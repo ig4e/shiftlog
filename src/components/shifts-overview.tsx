@@ -24,6 +24,7 @@ export function ShiftsOverview() {
         .then((data) =>
           data.sort(
             (a, b) =>
+              //@ts-expect-error -- nan
               b.startedAt - a.startedAt,
           ),
         ),
