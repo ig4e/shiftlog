@@ -35,7 +35,9 @@ export const shiftRouter = createTRPCRouter({
         "desc" | "asc",
       ];
 
-      const totalItems = await ctx.db.shift.count({ where: { userId: user.id } });
+      const totalItems = await ctx.db.shift.count({
+        where: { userId: user.id },
+      });
       const items = await ctx.db.shift.findMany({
         where: { userId: user.id },
         cursor: input.cursor ? { id: input.cursor } : undefined,
