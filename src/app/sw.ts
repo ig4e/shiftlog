@@ -29,7 +29,7 @@ const serwist = new Serwist({
   ],
 });
 
-serwist.addEventListeners();
+serwist.registerRoute(new NavigationRoute(serwist.createHandlerBoundToUrl("/")));
 
 const backgroundSync = new BackgroundSyncPlugin("shift-sync", {
   maxRetentionTime: 24 * 60, // Retry for a maximum of 24 Hours (specified in minutes)
@@ -42,6 +42,9 @@ registerRoute(
   }),
   "POST",
 );
+
+serwist.addEventListeners();
+
 
 // const client = createTRPCClient<AppRouter>({
 //   links: [
