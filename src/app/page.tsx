@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { OverviewChart } from "~/components/charts/shift-duration";
 import { ShiftControls } from "~/components/shift-controls";
 import { ShiftsOverview } from "~/components/shifts-overview";
