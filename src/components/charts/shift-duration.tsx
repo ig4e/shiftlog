@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { DateTime } from "luxon";
 
 import {
@@ -39,10 +39,13 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function OverviewChart() {
-  const [timeRange, setTimeRange] =
-    React.useState<RouterInputs["shift"]["getStats"]["timeRange"]>("WEEK");
+  const [timeRange, setTimeRange] = React.useState<"WEEK" | "MONTH" | "YEAR">(
+    "WEEK",
+  );
 
-  const data = useLiveQuery(() => getChartData({ timeRange })) ?? {
+  const [data, _setData] = React.useState<
+    Awaited<ReturnType<typeof getChartData>>
+  >({
     chartData: [],
     meta: {
       totalShifts: 0,
@@ -51,7 +54,15 @@ export function OverviewChart() {
       startOfTimeRange: new Date(),
       endOfTimeRange: new Date(),
     },
-  };
+  });
+
+  React.useEffect(
+    () =>
+      void getChartData({ timeRange })
+        .then((data) => _setData(data))
+        .catch(console.error),
+    [timeRange],
+  );
 
   return (
     <Card className="m-0 rounded-xl border-none p-0">
@@ -137,6 +148,12 @@ export function OverviewChart() {
                   day: "numeric",
                 });
               }}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tickCount={3}
             />
             <ChartTooltip
               cursor={false}

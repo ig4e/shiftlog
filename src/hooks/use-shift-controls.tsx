@@ -3,10 +3,20 @@ import { DateTime, Duration } from "luxon";
 import { useEffect, useMemo, useState } from "react";
 import { db } from "~/lib/db";
 
-export function useShiftControls() {
-  const [data, setData] = useState<Shift>();
+export function useShiftControls({
+  shiftData,
+}: {
+  shiftData?: Omit<Shift, "userId">;
+}) {
+  const [data, setData] = useState<Omit<Shift, "userId">>();
 
   useEffect(() => {
+    if (shiftData) {
+      setData(shiftData);
+
+      return () => undefined;
+    }
+
     const timer = setInterval(() => {
       db.shifts
         .orderBy("startedAt")
@@ -16,7 +26,7 @@ export function useShiftControls() {
         .then((data) => setData(data));
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [shiftData]);
 
   const meta = useMemo(() => {
     if (!data) return {};
@@ -57,6 +67,7 @@ export function useShiftControls() {
       breakPercentage,
       formattedTime: formatDuration(workingTimeWithoutBreaks),
       formattedBreakTime: formatDuration(totalBreakTime),
+      formattedTotalTime: formatDuration(totalWorkingTime),
       ongoingBreak,
     };
   }, [data]);
@@ -67,7 +78,7 @@ export function useShiftControls() {
   };
 }
 
-function formatDuration(milliseconds: number) {
+export function formatDuration(milliseconds: number) {
   const duration = Duration.fromMillis(milliseconds);
   return duration.toFormat("h'h' m'm' s's'");
 }

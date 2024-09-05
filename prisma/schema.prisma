@@ -11,23 +11,23 @@ datasource db {
 }
 
 model User {
-    id       String  @id @default(auto()) @map("_id") @db.ObjectId
-    email String  @unique
-    shifts   Shift[]
+    id     String  @id @default(uuid()) @map("_id")
+    email  String  @unique
+    shifts Shift[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 }
 
 model Shift {
-    id        String    @id @default(auto()) @map("_id") @db.ObjectId
+    id        String    @id @default(uuid()) @map("_id")
     startedAt DateTime
     endedAt   DateTime?
     breaks    Break[]
     user      User      @relation(fields: [userId], references: [id])
 
     updatedAt DateTime @updatedAt
-    userId    String   @db.ObjectId
+    userId    String
 
     @@index([startedAt, userId])
 }

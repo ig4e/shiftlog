@@ -3,17 +3,22 @@
  * for Docker builds.
  */
 await import("./src/env.js");
+import withSerwistInit from "@serwist/next";
+
+const withSerwist = withSerwistInit({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  additionalPrecacheEntries: [{ url: "/settings" }],
+});
 
 /** @type {import("next").NextConfig} */
 const config = {
   eslint: {
     ignoreDuringBuilds: true,
-
   },
   typescript: {
     ignoreBuildErrors: true,
-    
   },
 };
 
-export default config;
+export default withSerwist(config);

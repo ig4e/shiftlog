@@ -3,56 +3,41 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 export const shiftRouter = createTRPCRouter({
-  hello: publicProcedure
-    .input(z.object({ text: z.string() }))
-    .query(({ input }) => {
-      return {
-        greeting: `Hello ${input.text}`,
-      };
-    }),
-
-  create: publicProcedure.mutation(async ({ ctx }) => {
-    return ctx.db.shift.create({
-      data: {
-        startedAt: new Date(),
-      },
-    });
-  }),
-
-  update: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      return ctx.db.shift.update({
-        where: {
-          id: input.id,
-        },
-        data: {
-          endedAt: new Date(),
-        },
-      });
-    }),
-
   getMany: publicProcedure
     .input(
       z.object({
-        orderBy: z.enum([
-          "startedAt_desc",
-          "updatedAt_desc",
-          "startedAt_asc",
-          "updatedAt_asc",
-        ]),
+        email: z.string().email(),
+        orderBy: z
+          .enum([
+            "startedAt_desc",
+            "updatedAt_desc",
+            "startedAt_asc",
+            "updatedAt_asc",
+          ])
+          .default("startedAt_desc"),
         cursor: z.string().optional(),
-        limit: z.number().int().min(1).max(100),
+        limit: z.number().int().min(1).max(1000).default(1000),
       }),
     )
-    .query(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.db.user.upsert({
+        where: {
+          email: input.email,
+        },
+        create: {
+          email: input.email,
+        },
+        update: {},
+      });
+
       const [orderKey, orderType] = input.orderBy.split("_") as [
         "startedAt" | "updatedAt",
         "desc" | "asc",
       ];
 
-      const totalItems = await ctx.db.shift.count();
+      const totalItems = await ctx.db.shift.count({ where: { userId: user.id } });
       const items = await ctx.db.shift.findMany({
+        where: { userId: user.id },
         cursor: input.cursor ? { id: input.cursor } : undefined,
         take: input.limit + 1,
         orderBy: {
@@ -76,68 +61,10 @@ export const shiftRouter = createTRPCRouter({
       };
     }),
 
-  getLatest: publicProcedure.query(async ({ ctx }) => {
-    const shift = await ctx.db.shift.findFirst({
-      orderBy: { startedAt: "desc" },
-    });
-
-    return shift ?? null;
-  }),
-
-  getStats: publicProcedure
-    .input(z.object({ timeRange: z.enum(["WEEK", "MONTH", "YEAR"]) }))
-    .query(async ({ input, ctx }) => {
-      const today = new Date();
-
-      const startOfWeek = getStartOfWeek(today);
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const startOfYear = new Date(today.getFullYear(), 0, 1);
-
-      const start =
-        input.timeRange === "WEEK"
-          ? startOfWeek
-          : input.timeRange === "MONTH"
-            ? startOfMonth
-            : startOfYear;
-
-      const shifts = await ctx.db.shift.findMany({
-        where: {
-          startedAt: {
-            gte: start,
-          },
-        },
-        select: {
-          startedAt: true,
-          endedAt: true,
-        },
-      });
-
-      return {
-        chartData: shifts.map((shift) => ({
-          date: shift.startedAt.toDateString(),
-          duration: DateTime.fromJSDate(shift.endedAt ?? new Date()).diff(
-            DateTime.fromJSDate(shift.startedAt),
-          ).as("hours"),
-        })),
-        meta: {
-          totalShifts: shifts.length,
-          totalDuration: shifts.reduce((acc, shift) => {
-            return (
-              acc +
-              (shift.endedAt ?? new Date()).getTime() -
-              shift.startedAt.getTime()
-            );
-          }, 0),
-          timeRange: input.timeRange,
-          startOfTimeRange: start,
-          endOfTimeRange: today,
-        },
-      };
-    }),
-
   sync: publicProcedure
     .input(
       z.object({
+        email: z.string().email(),
         shifts: z.array(
           z.object({
             id: z.string(),
@@ -149,6 +76,16 @@ export const shiftRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      const user = await ctx.db.user.upsert({
+        where: {
+          email: input.email,
+        },
+        create: {
+          email: input.email,
+        },
+        update: {},
+      });
+
       const localShifts = await ctx.db.shift.findMany({
         where: {
           id: {
@@ -192,6 +129,7 @@ export const shiftRouter = createTRPCRouter({
               id: shift.id,
               startedAt: shift.startedAt,
               endedAt: shift.endedAt,
+              userId: user.id,
             },
           });
         }

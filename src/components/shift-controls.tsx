@@ -12,19 +12,22 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { db } from "~/lib/db";
+import { db, getObjectID } from "~/lib/db";
 import { cn } from "~/lib/utils";
 import { Button } from "./ui/button";
 import { useShiftControls } from "~/hooks/use-shift-controls";
+import { useSearchParams } from "next/navigation";
 
 export function ShiftControls() {
-  const { data, ...meta } = useShiftControls();
+  const searchParams = useSearchParams();
+  const { data, ...meta } = useShiftControls({});
 
   const startShift = useCallback(() => {
     void toast.promise(
       new Promise((fulfuil) =>
         fulfuil(
           db.shifts.add({
+            id: getObjectID(),
             startedAt: new Date(),
             updatedAt: new Date(),
             breaks: [],
@@ -106,6 +109,25 @@ export function ShiftControls() {
     );
   }, [data]);
 
+  useEffect(() => {
+    const action = searchParams.get("action") as "start" | "end" | null;
+
+    if (action) {
+      if (action === "start" && !data) {
+        startShift();
+      } else if (action === "end" && data) {
+        if (
+          DateTime.now().diff(DateTime.fromJSDate(data.startedAt)).as("hours") <
+          1
+        ) {
+          return;
+        }
+
+        endShift();
+      }
+    }
+  }, [searchParams]);
+
   if (!data)
     return (
       <Card className="border-none">
@@ -150,21 +172,23 @@ export function ShiftControls() {
             ></div>
           </div>
 
-          <div className="mt-4 flex justify-center gap-4">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="mt-4 flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <div
-                className="h-2 w-2 shrink-0 rounded-[2px]"
+                className="h-3 w-3 shrink-0 rounded-full"
                 style={{ backgroundColor: "hsl(var(--chart-1))" }}
               />
               Work hours
+              <p className="ml-auto">{meta.formattedTime}</p>
             </div>
 
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <div
-                className="h-2 w-2 shrink-0 rounded-[2px]"
+                className="h-3 w-3 shrink-0 rounded-full"
                 style={{ backgroundColor: "hsl(var(--chart-3))" }}
               />
               Break hours
+              <p className="ml-auto">{meta.formattedBreakTime}</p>
             </div>
           </div>
         </div>
