@@ -5,7 +5,9 @@ import { ShiftsOverview } from "~/components/shifts-overview";
 export default async function Home() {
   return (
     <main className="flex flex-col gap-4">
-      <ShiftControls />
+      <Suspense>
+        <ShiftControls />
+      </Suspense>
       <OverviewChart />
       <ShiftsOverview />
     </main>
