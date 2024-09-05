@@ -15,6 +15,9 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
+const revision = crypto.randomUUID();
+
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
@@ -27,6 +30,24 @@ const serwist = new Serwist({
       handler: new CacheFirst(),
     },
   ],
+  fallbacks: {
+    entries: [
+      {
+        url: "/",
+        revision,
+        matcher({ request }) {
+          return request.destination === "document";
+        },
+      },
+     {
+        url: "/settings",
+        revision,
+        matcher({ request }) {
+          return request.destination === "document";
+        },
+      }, 
+    ],
+  },
 });
 
 serwist.registerRoute(new NavigationRoute(serwist.createHandlerBoundToUrl("/")));
