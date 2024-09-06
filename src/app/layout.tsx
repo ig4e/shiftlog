@@ -59,9 +59,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${GeistSans.variable} dark bg-background`}>
-      <body className="container">
+      <body>
         <Header />
-        <ScrollArea className="mb-6 h-[calc(100dvh_-_88px)] rounded-xl">
+        <ScrollArea className="mb-6 h-[calc(100dvh_-_88px)] rounded-xl px-4">
           <div className="m-b-6">
             <TRPCReactProvider>
               {children}

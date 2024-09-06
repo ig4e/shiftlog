@@ -29,9 +29,9 @@ export function ShiftControls() {
           db.shifts.add({
             id: getObjectID(),
             startedAt: new Date(),
-            updatedAt: new Date(),
-            breaks: [],
             endedAt: null,
+            breaks: [],
+            updatedAt: new Date(),
           }),
         ),
       ),
@@ -51,6 +51,7 @@ export function ShiftControls() {
         fulfuil(
           db.shifts.update(data.id, {
             endedAt: new Date(),
+            updatedAt: new Date(),
           }),
         ),
       ),
@@ -70,6 +71,7 @@ export function ShiftControls() {
         fulfuil(
           db.shifts.update(data.id, {
             breaks: [...data.breaks, { startedAt: new Date(), endedAt: null }],
+            updatedAt: new Date(),
           }),
         ),
       ),
@@ -98,6 +100,7 @@ export function ShiftControls() {
               },
               ...data.breaks.slice(breakIndex + 1),
             ],
+            updatedAt: new Date(),
           }),
         ),
       ),
@@ -111,19 +114,36 @@ export function ShiftControls() {
 
   useEffect(() => {
     const action = searchParams.get("action") as "start" | "end" | null;
+    const activeShift = data;
 
     if (action) {
-      if (action === "start" && !data) {
-        startShift();
-      } else if (action === "end" && data) {
-        if (
-          DateTime.now().diff(DateTime.fromJSDate(data.startedAt)).as("hours") <
-          1
-        ) {
-          return;
-        }
+      if (action === "start") {
+        // if (activeShift && meta.ongoingBreak) {
+        //   endBreak();
+        // } else {
+        //   startShift();
+        // }
 
-        endShift();
+        if (!activeShift) startShift();
+
+      } else if (action === "end") {
+        if (activeShift) {
+
+          // if (meta.ongoingBreak) {
+          //   endBreak();
+          //   return;
+          // }
+
+          if (
+            DateTime.now()
+              .diff(DateTime.fromJSDate(data.startedAt))
+              .as("hours") < 1
+          ) {
+            return;
+          }
+
+          endShift();
+        }
       }
     }
   }, [searchParams]);
