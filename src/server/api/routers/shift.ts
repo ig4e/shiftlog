@@ -2,6 +2,30 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 export const shiftRouter = createTRPCRouter({
+  deleteHistory: publicProcedure
+    .input(
+      z.object({
+        email: z.string().email(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.db.user.upsert({
+        where: {
+          email: input.email,
+        },
+        create: {
+          email: input.email,
+        },
+        update: {},
+      });
+
+      return ctx.db.shift.deleteMany({
+        where: {
+          userId: user.id,
+        },
+      });
+    }),
+
   getMany: publicProcedure
     .input(
       z.object({
