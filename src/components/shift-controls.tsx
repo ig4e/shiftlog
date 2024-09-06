@@ -47,16 +47,25 @@ export function ShiftControls() {
     if (!data) return;
 
     void toast.promise(
-      new Promise((fulfuil) =>
-        fulfuil(
-          db.shifts.update(data.id, {
-            endedAt: new Date(),
-            updatedAt: new Date(),
-          }),
-        ),
-      ),
+      new Promise((fulfuil) => {
+        const updateData = {
+          endedAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        // If there's an ongoing break, use the startedAt of the break as the endedAt time for the shift.
+        const ongoingBreakIndex = data.breaks.findIndex((break_) => !break_.endedAt);
+        if (ongoingBreakIndex !== -1) {
+          const breakStartedAt = data.breaks[ongoingBreakIndex]!.startedAt;
+          updateData.endedAt = new Date(breakStartedAt);
+          // Remove the ongoing break from the breaks array
+          data.breaks.splice(ongoingBreakIndex, 1);
+        }
+
+        fulfuil(db.shifts.update(data.id, updateData));
+      }),
       {
-        loading: "Endinging shift...",
+        loading: "Ending shift...",
         success: "Shift ended!",
         error: "Shift failed to end",
       },
@@ -113,36 +122,34 @@ export function ShiftControls() {
   }, [data]);
 
   useEffect(() => {
-    const action = searchParams.get("action") as "start" | "end" | null;
+    const action = searchParams.get("action") as "start" | "end" | "break" | null;
     const activeShift = data;
 
     if (action) {
       if (action === "start") {
-        // if (activeShift && meta.ongoingBreak) {
-        //   endBreak();
-        // } else {
-        //   startShift();
-        // }
-
-        if (!activeShift) startShift();
-
+        if (!activeShift) {
+          startShift();
+        } else if (meta.ongoingBreak) {
+          endBreak();
+        }
+      } else if (action === "break") {
+        if (activeShift) {
+          if (meta.ongoingBreak) {
+            endBreak();
+          } else {
+            startBreak();
+          }
+        } else {
+          startShift();
+          startBreak();
+        }
       } else if (action === "end") {
         if (activeShift) {
-
-          // if (meta.ongoingBreak) {
-          //   endBreak();
-          //   return;
-          // }
-
-          if (
-            DateTime.now()
-              .diff(DateTime.fromJSDate(data.startedAt))
-              .as("hours") < 1
-          ) {
-            return;
+          if (meta.ongoingBreak) {
+            endShift(); // This will now handle ending the shift with the break's start time.
+          } else {
+            endShift();
           }
-
-          endShift();
         }
       }
     }
