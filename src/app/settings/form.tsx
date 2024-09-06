@@ -33,7 +33,9 @@ export function SettingsForm() {
   const startSync = useSync();
   const remoteAccountData = api.shift.getMany.useMutation();
   const deleteRemoteData = api.shift.deleteHistory.useMutation();
+  
   const [isLocked, setIsLocked] = useState(true);
+  const [isLockLocked, setIsLockLocked] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -151,42 +153,55 @@ export function SettingsForm() {
         confirmation.
       </p>
 
-      <div className="relative w-full space-y-4">
-        <div
-          className={cn(
-            "absolute inset-0 z-50 rounded-md bg-background/25 backdrop-blur-sm transition-opacity",
-            { "pointer-events-none opacity-0": !isLocked },
-          )}
-        />
+      {!isLockLocked && (
+        <>
+          <div className="relative w-full space-y-4">
+            <div
+              className={cn(
+                "absolute inset-0 z-50 rounded-md bg-background/25 backdrop-blur-sm transition-opacity",
+                { "pointer-events-none opacity-0": !isLocked },
+              )}
+            />
 
-        <Button
-          className="w-full"
-          variant={"destructive"}
-          onClick={() => void deleteLocal()}
-          disabled={isLocked}
-        >
-          <TrashIcon className="me-2" />
-          <span>Delete local data</span>
-        </Button>
+            <Button
+              className="w-full"
+              variant={"destructive"}
+              onClick={() => void deleteLocal()}
+              disabled={isLocked}
+            >
+              <TrashIcon className="me-2" />
+              <span>Delete local data</span>
+            </Button>
 
-        <Button
-          className="w-full"
-          variant={"destructive"}
-          onClick={() => void deleteRemoteAndLocal()}
-          disabled={isLocked || !account}
-        >
-          <TrashIcon className="me-2" />
-          <span>Delete local & remote data</span>
-        </Button>
-      </div>
+            <Button
+              className="w-full"
+              variant={"destructive"}
+              onClick={() => void deleteRemoteAndLocal()}
+              disabled={isLocked || !account}
+            >
+              <TrashIcon className="me-2" />
+              <span>Delete local & remote data</span>
+            </Button>
+          </div>
+
+          <Button
+            className="w-full"
+            variant={"destructive"}
+            onClick={() => void setIsLocked((state) => !state)}
+          >
+            <LockClosedIcon className="me-2" />
+            <span>Open LOCK</span>
+          </Button>
+        </>
+      )}
 
       <Button
         className="w-full"
         variant={"destructive"}
-        onClick={() => void setIsLocked((state) => !state)}
+        onClick={() => void setIsLockLocked((state) => !state)}
       >
         <LockClosedIcon className="me-2" />
-        <span>Open LOCK</span>
+        <span>Open lock of LOCK</span>
       </Button>
     </>
   );

@@ -13,9 +13,9 @@ export function Header() {
       <div className="me-6 flex h-14 items-center justify-between gap-2">
         <SiteNavigation />
         <div className="flex items-center">
-          <Button className="rounded-full" size={"icon"} variant={"ghost"}>
+          {/* <Button className="rounded-full" size={"icon"} variant={"ghost"}>
             <BarChartIcon className="h-5 w-5" />
-          </Button>
+          </Button> */}
           <Link href="/settings">
             <Button className="rounded-full" size={"icon"} variant={"ghost"}>
               <DotsVerticalIcon className="h-5 w-5" />

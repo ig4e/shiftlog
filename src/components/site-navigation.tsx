@@ -16,10 +16,15 @@ export function SiteNavigation() {
   const isAtBase = pathname == "/";
 
   return (
-    <div className={cn("flex items-center", { "ms-6": isAtBase, "ms-2":!isAtBase  })}>
+    <div
+      className={cn("ms-6 flex items-center", {
+        "ms-6": isAtBase,
+        "ms-4": !isAtBase,
+      })}
+    >
       {!isAtBase && (
         <Button
-          className="rounded-full"
+          className="me-2 rounded-full"
           size={"icon"}
           variant={"ghost"}
           onClick={router.back}
