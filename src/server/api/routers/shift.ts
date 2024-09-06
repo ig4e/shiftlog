@@ -1,4 +1,3 @@
-import { DateTime } from "luxon";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
@@ -38,6 +37,7 @@ export const shiftRouter = createTRPCRouter({
       const totalItems = await ctx.db.shift.count({
         where: { userId: user.id },
       });
+
       const items = await ctx.db.shift.findMany({
         where: { userId: user.id },
         cursor: input.cursor ? { id: input.cursor } : undefined,
@@ -71,7 +71,13 @@ export const shiftRouter = createTRPCRouter({
           z.object({
             id: z.string(),
             startedAt: z.coerce.date(),
-            endedAt: z.coerce.date().optional(),
+            endedAt: z.coerce.date().nullable(),
+            breaks: z
+              .object({
+                startedAt: z.coerce.date(),
+                endedAt: z.coerce.date().nullable(),
+              })
+              .array(),
             updatedAt: z.coerce.date(),
           }),
         ),
@@ -115,26 +121,23 @@ export const shiftRouter = createTRPCRouter({
         });
 
       for (const shift of newShifts) {
-        if (shift.localVersion) {
-          await ctx.db.shift.update({
-            where: {
-              id: shift.id,
-            },
-            data: {
-              startedAt: shift.startedAt,
-              endedAt: shift.endedAt,
-            },
-          });
-        } else {
-          await ctx.db.shift.create({
-            data: {
-              id: shift.id,
-              startedAt: shift.startedAt,
-              endedAt: shift.endedAt,
-              userId: user.id,
-            },
-          });
-        }
+        await ctx.db.shift.upsert({
+          where: {
+            id: shift.id,
+          },
+          create: {
+            id: shift.id,
+            startedAt: shift.startedAt,
+            endedAt: shift.endedAt,
+            userId: user.id,
+            breaks: { set: shift.breaks },
+          },
+          update: {
+            startedAt: shift.startedAt,
+            endedAt: shift.endedAt,
+            breaks: { set: shift.breaks },
+          },
+        });
       }
 
       return { message: "Synced, you slave." };

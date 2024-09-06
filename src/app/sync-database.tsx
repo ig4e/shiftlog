@@ -1,5 +1,4 @@
 "use client";
-import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { db } from "~/lib/db";
@@ -13,6 +12,7 @@ export function useSync() {
   return async function syncShifts() {
     const shifts = await db.shifts.toArray();
     const account = await db.account.toCollection().first();
+
     if (!account) {
       toast.error("No account found to sync with.");
       throw new Error("No account found");
@@ -24,8 +24,15 @@ export function useSync() {
       email: account.email,
       shifts: shifts.map((shift) => ({
         id: String(shift.id),
+
         startedAt: shift.startedAt,
-        endedAt: shift.endedAt ?? undefined,
+        endedAt: shift.endedAt || null,
+
+        breaks: shift.breaks.map((breakTime) => ({
+          startedAt: breakTime.startedAt,
+          endedAt: breakTime.endedAt || null,
+        })),
+        
         updatedAt: shift.updatedAt,
       })),
     });

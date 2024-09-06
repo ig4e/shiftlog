@@ -3,12 +3,16 @@
  * for Docker builds.
  */
 await import("./src/env.js");
-import withSerwistInit from "@serwist/next";
+import withPWAInit from "@ducanh2912/next-pwa";
 
-const withSerwist = withSerwistInit({
-  swSrc: "src/app/sw.ts",
-  swDest: "public/sw.js",
-  additionalPrecacheEntries: [{ url: "/settings" }],
+const withPWA = withPWAInit({
+  dest: "public",
+  aggressiveFrontEndNavCaching: true,
+  cacheOnFrontEndNav: true,
+  cacheStartUrl: true,
+  fallbacks: {
+    document: "/~offline",
+  },
 });
 
 /** @type {import("next").NextConfig} */
@@ -21,4 +25,4 @@ const config = {
   },
 };
 
-export default withSerwist(config);
+export default withPWA(config);
