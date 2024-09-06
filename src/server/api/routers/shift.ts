@@ -70,15 +70,15 @@ export const shiftRouter = createTRPCRouter({
         shifts: z.array(
           z.object({
             id: z.string(),
-            startedAt: z.coerce.date(),
-            endedAt: z.coerce.date().nullable(),
+            startedAt: z.date(),
+            endedAt: z.date().nullable(),
             breaks: z
               .object({
-                startedAt: z.coerce.date(),
-                endedAt: z.coerce.date().nullable(),
+                startedAt: z.date(),
+                endedAt: z.date().nullable(),
               })
               .array(),
-            updatedAt: z.coerce.date(),
+            updatedAt: z.date(),
           }),
         ),
       }),
